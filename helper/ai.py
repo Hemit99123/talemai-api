@@ -19,13 +19,14 @@ def query_model(context, query):
 
     systemPrompt = "Roleplay as a Q&A chatbot."
 
-    prompt = f"""Use the following context to answer the question.
+    prompt = f"""Use the following context to answer the question. Think about the contents of the context carefully.
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 Context: {context}
 Question: {query}
 """
 
+    print(context)
 
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
@@ -45,8 +46,6 @@ Question: {query}
             }
         ]
     }
-
-    print(prompt)
 
     response = requests.post(url, headers=headers, json=data)
     result = response.json()
