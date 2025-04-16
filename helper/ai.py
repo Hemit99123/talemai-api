@@ -12,8 +12,6 @@ ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
 ASTRA_DB_NAMESPACE = os.getenv("ASTRA_DB_NAMESPACE")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-
-
 def query_model(context, query):
     # Prompt engineering to ensure LLM fits our use case correctly
 
