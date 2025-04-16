@@ -17,11 +17,11 @@ def query_model(context, query):
 
     systemPrompt = "Roleplay as a Q&A chatbot."
 
-    prompt = f"""Use the following context to answer the question. Think about the contents of the context carefully.
+    prompt = f"""Use the following context to answer the question. Think about the contents of the context carefully to formulate a speific and accurate answer based on the query given.
 If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
 Context: {context}
-Question: {query}
+Query: {query}
 """
 
     print(context)
