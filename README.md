@@ -29,17 +29,17 @@
 
 ## 1. Introduction
 
-Talem AI is a RAG application that uses Mircosoft Phi 3.5-mini instruct model. It's main purpose is to act like a Q&A chatbot who provides answers to prompts about different college programs. To gain specizlied context within this domain, we vectorize college information brochours and through **Langchain**, this information is retrieved based on it's similarity to the user's prompt and given as **context** to the prompt into MistralAI LLM hosted on HuggingFace
+Talem AI is a RAG application. This codebase holds the code for the REST API mircoservice hosting the backend functions. It's main purpose is to act like a Q&A chatbot who provides answers to prompts about different college programs. To gain specialized context within this domain, we vectorize college information brochours and through **Langchain**, this information is retrieved based on it's similarity to the user's prompt and given as **context** to the prompt into MistralAI LLM hosted on HuggingFace
 
 ## 2. Key Technologies
 
 - Python 🐍
 - LangChain 👨‍🔬
 - AstraDB 💽
-- HuggingFace Inference API (running LLMs through cloud-based hardware)
-- MistralAI 7B Model (good reasoning at lower hardware costs, our LLM)
-- sentence-transformers model (for vector embeddings)
-- DJANGO (to host documentation and api)
+- Groq REST API
+- LLAMA model hosted through Groq infrastructure
+- sentence-transformers model (for vector embeddings) provided by HuggingFace
+- FastAPI to build the REST API mircoservice
 
 ## 3. Developer Credits
 
