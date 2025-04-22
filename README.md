@@ -33,22 +33,21 @@ Talem AI is a RAG application. This codebase holds the code for the REST API mir
 
 ## 2. Key Technologies
 
-- Python 🐍
-- LangChain 👨‍🔬
-- AstraDB 💽
-- Groq REST API
-- LLAMA model hosted through Groq infrastructure
-- sentence-transformers model (for vector embeddings) provided by HuggingFace
-- FastAPI to build the REST API mircoservice
-
-## 3. Developer Credits
-
-The following people are recognized for their contribution to the Talem AI project. A huge thanks from the staff at Talem!
-
-- Hemit Patel (Chief Technology Officer)
-
-## 4. Demo
-
-Here is a picture of a demo of Talem AI at work!
-
-![image](https://github.com/user-attachments/assets/52d6cff6-cc5d-4621-a112-3777cc324ded)
+### Python 🐍
+Python is the programming language of choice for this project
+<br>
+#### LangChain 👨‍🔬
+Langchain abstracts a lot of the RAG logic, allowing for faster development times. 
+<br>
+#### AstraDB 💽
+AstraDB allows for the storage of the vector embeddings (context) which are retrieved by the different materials we want our LLM to be well-versed in.
+<br>
+#### Groq REST API
+Groq allows us to access hosted LLMs which will feed on these vector embeddings (context) and a well written prompt which is designed to be very speific and scientific to produce the best result.
+<br>
+#### sentence-transformers model
+The vector embeddings are numbers which were produced through a complex algorithm. To convert them back into human readable syntax (needed to pass into LLM), we use this AI model provided by LangChain and HuggingFace.
+<br>
+#### FastAPI 💻
+FastAPI allows us to build the REST API which will allow the frontend interface to request information through their query. Development times are fast and it was easy to set up. Response times are fast.
+<br>
