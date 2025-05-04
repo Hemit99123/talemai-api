@@ -49,5 +49,5 @@ Groq allows us to access hosted LLMs which will feed on these vector embeddings 
 The vector embeddings are numbers which were produced through a complex algorithm. To convert them back into human readable syntax (needed to pass into LLM), we use this AI model provided by LangChain and HuggingFace.
 <br>
 #### FastAPI 💻
-FastAPI allows us to build the REST API which will allow the frontend interface to request information through their query. Development times are fast and it was easy to set up. Response times are fast.
+FastAPI allows us to build the REST API which will allow the frontend interface to request information through their query. Development times are fast and it was easy to set up. Response times are also fast.
 <br>
