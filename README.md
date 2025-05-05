@@ -20,14 +20,7 @@
   <br>
 </div>
 
-## Table of Contents
-
-1. [Introduction](#1-introduction)  
-2. [Key Technologies](#2-key-technologies)  
-3. [Developer Credits](#3-developer-credits)  
-4. [Demo](#4-demo)
-
-## 1. Introduction
+## What is Talem AI?
 
 Talem AI is a RAG application. This codebase holds the code for the REST API mircoservice hosting the backend functions. It's main purpose is to act like a Q&A chatbot who provides answers to prompts about different college programs. To gain specialized context within this domain, we vectorize college information brochours and through **Langchain**, this information is retrieved based on it's similarity to the user's prompt and given as **context** to the prompt into Groq REST API.
 
