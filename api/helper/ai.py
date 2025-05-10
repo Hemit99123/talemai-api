@@ -2,6 +2,7 @@
 
 import os
 import requests
+import json
 from dotenv import load_dotenv
 from langchain_astradb import AstraDBVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -26,8 +27,6 @@ def query_model(context, query):
         f"Context: {context}\nQuery: {query}"
     )
 
-    print(context)
-
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
@@ -41,10 +40,19 @@ def query_model(context, query):
         ]
     }
 
-    response = requests.post(url, headers=headers, json=data)
-    result = response.json()
-
-    return result["choices"][0]["message"]["content"]
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
+    except requests.exceptions.Timeout:
+        return "The request timed out. Please try again later."
+    except requests.exceptions.RequestException as e:
+        return f"Request error occurred: {str(e)}"
+    except json.JSONDecodeError:
+        return "Failed to parse response from LLM API."
+    except (KeyError, IndexError):
+        return "Unexpected response format from LLM API."
 
 
 def fetch_and_query(query):
@@ -64,16 +72,4 @@ def fetch_and_query(query):
     retrieved_docs = retriever.invoke(query)
     context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
-    print(context)
-
-    try:
-        return query_model(context, query)
-    except requests.exceptions.RequestException as e:
-        return f"Request error occurred: {str(e)}"
-    except KeyError:
-        return "Unexpected response format from LLM API."
-    except ValueError as e:
-        return f"Value error occurred: {str(e)}"
-    except Exception as e:
-        # TODO: Narrow this catch block to specific exception types if needed
-        return f"An unexpected error occurred: {str(e)}"
+    return query_model(context, query)
