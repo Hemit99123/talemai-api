@@ -1,8 +1,8 @@
 """Helper module for querying LLM with context from AstraDB vector store."""
 
 import os
-import requests
 import json
+import requests
 from dotenv import load_dotenv
 from langchain_astradb import AstraDBVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
