@@ -1,8 +1,10 @@
-from langchain_astradb import AstraDBVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
+"""Helper module for AI querying using Groq and AstraDB vector store."""
+
+import os
 import requests
 from dotenv import load_dotenv
-import os
+from langchain_astradb import AstraDBVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # Load environment variables
 load_dotenv()
@@ -13,16 +15,15 @@ ASTRA_DB_NAMESPACE = os.getenv("ASTRA_DB_NAMESPACE")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 def query_model(context, query):
-    # Prompt engineering to ensure LLM fits our use case correctly
+    """Send a query and context to the Groq LLM API and return the response."""
+    system_prompt = "Roleplay as a Q&A chatbot."
 
-    systemPrompt = "Roleplay as a Q&A chatbot."
-
-    prompt = f"""Use the following context to answer the question. Think about the contents of the context carefully to formulate a speific and accurate answer based on the query given.
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-Context: {context}
-Query: {query}
-"""
+    prompt = (
+        f"Use the following context to answer the question. "
+        f"Think about the contents of the context carefully to formulate a specific and accurate answer. "
+        f"If you don't know the answer, just say that you don't know.\n\n"
+        f"Context: {context}\nQuery: {query}"
+    )
 
     print(context)
 
@@ -34,14 +35,8 @@ Query: {query}
     data = {
         "model": "llama-3.3-70b-versatile",
         "messages": [
-            {
-                "role": "system",
-                "content": systemPrompt
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt}
         ]
     }
 
@@ -51,6 +46,7 @@ Query: {query}
     return result["choices"][0]["message"]["content"]
 
 def fetch_and_query(query):
+    """Fetch relevant context from AstraDB vector store and query the LLM."""
     embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
@@ -64,14 +60,16 @@ def fetch_and_query(query):
 
     retriever = vectorstore.as_retriever()
 
-    # Retrieve relevant context from stored embeddings
     retrieved_docs = retriever.invoke(query)
     context = "\n\n".join([doc.page_content for doc in retrieved_docs])
 
     print(context)
+
     try:
-        result = query_model(context, query)
-        return result
+        return query_model(context, query)
+    except requests.exceptions.RequestException as e:
+        return f"Request error occurred: {str(e)}"
+    except KeyError:
+        return "Unexpected response format from LLM API."
     except Exception as e:
         return f"An error occurred: {str(e)}"
-    
