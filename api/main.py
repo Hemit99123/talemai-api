@@ -22,4 +22,4 @@ async def read_root():
 async def handle_query(request: QueryModal):
     """Handle POST request, process query, and return AI-generated response."""
     ai_response = ai.fetch_and_query(request.query)
-    return {"content": ai_response}
+    return {"response": ai_response}
