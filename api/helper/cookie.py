@@ -1,3 +1,4 @@
+from fastapi import Request
 from fastapi.responses import JSONResponse
 
 content = { "response": "Success." }
@@ -16,3 +17,7 @@ def destroy_cookie():
     response = JSONResponse(content=content)
     response.delete_cookie(key="session-id")
     return response
+
+async def get_cookie(request: Request):
+    sess_id = request.cookies.get("session-id")
+    return sess_id

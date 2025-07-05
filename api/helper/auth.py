@@ -3,6 +3,7 @@ import requests
 import redis
 from dotenv import load_dotenv
 from helper import sess_id
+from helper import cookie
 
 # Load environment variables
 load_dotenv()
@@ -47,4 +48,10 @@ def destroy_session(email):
         print(error)
         return False
 
-def get_session():
+def get_session(request: Request):
+    cookie_sess_id = cookie.get_cookie(request)
+
+    email = redis_client.hget(cookie_sess_id, "email")
+    picture = redis_client.hget(cookie_sess_id, "picture")
+
+    return { "email": email, "picture": picture }
