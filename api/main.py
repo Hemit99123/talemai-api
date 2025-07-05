@@ -13,9 +13,10 @@ class QueryModal(BaseModel):
     """Schema for incoming POST request with user query."""
     query: str
 
+# Needed to allow cookies to be sent to frontend
 @app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=["https://ai.talem.org"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
     allow_headers=["Access-Control-Allow-Headers", 'Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
