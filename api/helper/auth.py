@@ -49,15 +49,22 @@ def destroy_session(email):
         return False
 
 def get_session(request: Request):
+    # get cookie with session id
     sess_id = request.cookies.get("session-id")
 
     if not sess_id:
         return False
 
+    # find session attributes using session id (hashmap allows individual key-value pairs access)
+    name = redis_client.hget(sess_id, "name")
     email = redis_client.hget(sess_id, "email")
     picture = redis_client.hget(sess_id, "picture")
 
     if not email or not picture:
         return False
     else:
-        return { "email": email, "picture": picture }
+        return { 
+            "name": name,
+            "email": email, 
+            "picture": picture 
+        }
