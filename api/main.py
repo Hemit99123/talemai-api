@@ -22,7 +22,7 @@ class TokenModal(BaseModel):
 # Needed to allow cookies to be sent to frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai.talem.org", "http://localhost:3000"],
+    allow_origins=["https://ai.talem.org", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
     allow_headers=["Access-Control-Allow-Headers", 'Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
