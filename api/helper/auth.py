@@ -55,4 +55,7 @@ def get_session(request: Request):
     email = redis_client.hget(cookie_sess_id, "email")
     picture = redis_client.hget(cookie_sess_id, "picture")
 
-    return { "email": email, "picture": picture }
+    if not email or not picture:
+        return None
+    else:
+        return { "email": email, "picture": picture }

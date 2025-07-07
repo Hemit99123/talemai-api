@@ -1,6 +1,6 @@
 """Main entry point for the Talem AI FastAPI server."""
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from helper import ai
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ class TokenModal(BaseModel):
 # Needed to allow cookies to be sent to frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai.talem.org"],
+    allow_origins=["https://ai.talem.org", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
     allow_headers=["Access-Control-Allow-Headers", 'Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
@@ -37,7 +37,6 @@ async def handle_index_request():
 @app.post("/")
 async def handle_chat_request(request: QueryModal):
     """Handle POST request, process query, and return AI-generated response."""
-
     ai_response = ai.fetch_and_query(request.query)
     return {"response": ai_response}
 
@@ -45,7 +44,6 @@ async def handle_chat_request(request: QueryModal):
 @app.post("/login/")
 async def handle_login_request(request: TokenModal):
     """Handle POST request, process Google token, create sessions, and cookies for frontend communication"""
-
     session_id = auth.create_session(request.token)
 
     if (session_id):
