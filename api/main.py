@@ -6,6 +6,7 @@ from helper import ai
 from pydantic import BaseModel
 from helper import auth
 from helper import cookie 
+from decorators import precheck
 
 app = FastAPI()
 
@@ -28,6 +29,7 @@ app.add_middleware(
 )
 
 @app.get("/")
+@precheck.decorator
 async def handle_index_request():
     """Health check route for the server."""
 
@@ -35,6 +37,7 @@ async def handle_index_request():
 
 
 @app.post("/")
+@precheck.decorator
 async def handle_chat_request(request: QueryModal):
     """Handle POST request, process query, and return AI-generated response."""
     ai_response = ai.fetch_and_query(request.query)

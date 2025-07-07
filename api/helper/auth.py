@@ -51,10 +51,13 @@ def destroy_session(email):
 def get_session(request: Request):
     sess_id = request.cookies.get("session-id")
 
+    if not sess_id:
+        return False
+
     email = redis_client.hget(sess_id, "email")
     picture = redis_client.hget(sess_id, "picture")
 
     if not email or not picture:
-        return None
+        return False
     else:
         return { "email": email, "picture": picture }
