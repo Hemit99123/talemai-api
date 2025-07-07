@@ -22,15 +22,18 @@ def create_session(token: str):
         )
 
         token_status = response.status_code == 200
-    
+
+        name = response.json().get("given_name") + response.json().get("family_name")
+        email = response.json().get("email")
+
         if (token_status):
 
             generated_sess_id = sess_id.generate_random_id()
 
             # This is the contents of the session
             redis_client.hset(generated_sess_id, mapping={
-                'name': response.user.name,
-                'email': response.user.email,
+                "name": name,
+                "email": email
             })
 
             return sess_id
