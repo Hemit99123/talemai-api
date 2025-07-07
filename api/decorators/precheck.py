@@ -1,18 +1,24 @@
 from helper import auth
 from fastapi import Request
+import functools
+import inspect
 
 def decorator(func):
-
-    # request is used within the logic of decorator so it is passed through wrapper
-    # this allows us to access the request object and its properties
-    # such as cookies, headers, etc. within the decorator logic
-    
-    def wrapper(request: Request):
-        session_validity = auth.get_session(request)
-
-        if (session_validity):
-            return func()
-        else:
-            return {"response": "Unauthorized access. Please login."}
-    return wrapper
-
+    if inspect.iscoroutinefunction(func):
+        @functools.wraps(func)
+        async def async_wrapper(request: Request):
+            session_validity = await auth.get_session(request) if inspect.iscoroutinefunction(auth.get_session) else auth.get_session(request)
+            if session_validity:
+                return await func(request)
+            else:
+                return {"response": "Unauthorized access. Please login."}
+        return async_wrapper
+    else:
+        @functools.wraps(func)
+        def sync_wrapper(request: Request):
+            session_validity = auth.get_session(request)
+            if session_validity:
+                return func(request)
+            else:
+                return {"response": "Unauthorized access. Please login."}
+        return sync_wrapper

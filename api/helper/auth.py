@@ -36,7 +36,7 @@ def create_session(token: str):
                 "email": email
             })
 
-            return sess_id
+            return generated_sess_id
         else:
             return False
     except Exception as error:
@@ -55,19 +55,19 @@ def get_session(request: Request):
     # get cookie with session id
     sess_id = request.cookies.get("session-id")
 
+    print(f"Session ID: {sess_id}")
+
     if not sess_id:
         return False
 
     # find session attributes using session id (hashmap allows individual key-value pairs access)
     name = redis_client.hget(sess_id, "name")
     email = redis_client.hget(sess_id, "email")
-    picture = redis_client.hget(sess_id, "picture")
 
-    if not email or not picture:
+    if not name or not email:
         return False
     else:
         return { 
             "name": name,
             "email": email, 
-            "picture": picture 
         }

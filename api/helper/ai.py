@@ -1,6 +1,4 @@
-"""Helper module for querying LLM with context from AstraDB vector store."""
-
-import os
+from os import getenv
 import json
 import requests
 from dotenv import load_dotenv
@@ -10,13 +8,13 @@ from langchain_huggingface import HuggingFaceEmbeddings
 # Load environment variables
 load_dotenv()
 
-ASTRA_DB_API_ENDPOINT = os.getenv("ASTRA_DB_API_ENDPOINT")
-ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
-ASTRA_DB_NAMESPACE = os.getenv("ASTRA_DB_NAMESPACE")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+ASTRA_DB_API_ENDPOINT = getenv("ASTRA_DB_API_ENDPOINT")
+ASTRA_DB_APPLICATION_TOKEN = getenv("ASTRA_DB_APPLICATION_TOKEN")
+ASTRA_DB_NAMESPACE = getenv("ASTRA_DB_NAMESPACE")
+GROQ_API_KEY = getenv("GROQ_API_KEY")
 
 
-def query_model(context, query):
+async def query_model(context, query):
     """Query the Groq LLM API with a given context and user query."""
     system_prompt = "Roleplay as a Q&A chatbot."
 
@@ -55,7 +53,7 @@ def query_model(context, query):
         return "Unexpected response format from LLM API."
 
 
-def fetch_and_query(query):
+async def fetch_and_query(query):
     """Fetch relevant context using vector search and send it along with the query to the LLM."""
     embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
