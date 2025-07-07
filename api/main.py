@@ -1,6 +1,7 @@
 """Main entry point for the Talem AI FastAPI server."""
 
 from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
 from helper import ai
 from pydantic import BaseModel
 from helper import auth
@@ -13,8 +14,12 @@ class QueryModal(BaseModel):
     """Schema for incoming POST request with user query."""
     query: str
 
+class TokenModal(BaseModel):
+    """Schema for incoming POST request with Google token."""
+    token: str
+
 # Needed to allow cookies to be sent to frontend
-@app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://ai.talem.org"],
     allow_credentials=True,
@@ -38,7 +43,7 @@ async def handle_chat_request(request: QueryModal):
 
 
 @app.post("/login/")
-async def handle_login_request(request: QueryModal, response: Response):
+async def handle_login_request(request: TokenModal):
     """Handle POST request, process Google token, create sessions, and cookies for frontend communication"""
 
     session_id = auth.create_session(request.token)
@@ -48,8 +53,8 @@ async def handle_login_request(request: QueryModal, response: Response):
     else:
         return {"response": "Error in logging process. Try again."}
 
-@app.post("/logout/"):
-async def handle_logout_request(request:QueryModal, response: Response):
+@app.post("/logout/")
+async def handle_logout_request():
     """Handle POST request, retrieve session for email id, destory session and cookies"""
 
     destruction_session = auth.destroy_session()

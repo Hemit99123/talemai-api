@@ -93,3 +93,4 @@ watchfiles
 websockets
 yarl
 zstandard
+redis

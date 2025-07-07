@@ -4,6 +4,7 @@ import redis
 from dotenv import load_dotenv
 from helper import sess_id
 from helper import cookie
+from fastapi import Request
 
 # Load environment variables
 load_dotenv()
@@ -21,16 +22,16 @@ def create_session(token: str):
             params={"id_token": token}
         )
 
-        email = response.user.email
         token_status = response.status_code == 200
     
         if (token_status):
 
-            sess_id = sess_id.generate_random_id()
+            generated_sess_id = sess_id.generate_random_id()
 
-            redis_client.hset(sess_id, mapping={
+            # This is the contents of the session
+            redis_client.hset(generated_sess_id, mapping={
                 'name': response.user.name,
-                'picture': response.user.picture
+                'email': response.user.email,
             })
 
             return sess_id
