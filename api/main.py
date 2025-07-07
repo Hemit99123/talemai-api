@@ -36,7 +36,7 @@ async def handle_index_request():
     return {"response": "Talem AI server"}
 
 
-@app.post("/")
+@app.post("/chat/")
 @precheck.decorator
 async def handle_chat_request(request: QueryModal):
     """Handle POST request, process query, and return AI-generated response."""
