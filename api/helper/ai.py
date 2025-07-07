@@ -66,6 +66,8 @@ async def fetch_and_query(query):
         namespace=ASTRA_DB_NAMESPACE,
     )
 
+    print(f"Querying vectorstore for: {query}")
+
     retriever = vectorstore.as_retriever()
     retrieved_docs = retriever.invoke(query)
     context = "\n\n".join([doc.page_content for doc in retrieved_docs])

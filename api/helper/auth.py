@@ -3,7 +3,7 @@ import requests
 import redis
 from dotenv import load_dotenv
 from helper import sess_id
-from fastapi import Request, Depends
+from fastapi import Request
 
 # Load environment variables
 load_dotenv()
@@ -21,10 +21,12 @@ def create_session(token: str):
             params={"id_token": token}
         )
 
-        token_status = response.status_code == 200
+        result = response.json()
 
-        name = response.json().get("given_name") + response.json().get("family_name")
-        email = response.json().get("email")
+        name = result["given_name"] + " " + result["family_name"]
+        email = result["email"]
+
+        token_status = response.status_code == 200
 
         if (token_status):
 
@@ -51,11 +53,9 @@ def destroy_session(email):
         print(error)
         return False
 
-def get_session(request: Request):
+async def get_session(request: Request):
     # get cookie with session id
     sess_id = request.cookies.get("session-id")
-
-    print(f"Session ID: {sess_id}")
 
     if not sess_id:
         return False

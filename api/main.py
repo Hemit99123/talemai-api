@@ -30,20 +30,28 @@ app.add_middleware(
 
 @app.get("/")
 @precheck.decorator
-async def handle_index_request():
+async def handle_index_request(request : Request):
     """Health check route for the server."""
-
     return {"response": "Talem AI server"}
 
+
+import asyncio
 
 @app.post("/chat/")
 @precheck.decorator
 async def handle_chat_request(request: Request):
     """Handle POST request, process query, and return AI-generated response."""
+    import asyncio
     data = await request.json()
     user_query = data.get("query")
-    ai_response = await ai.fetch_and_query(user_query)
-    return {"response": ai_response}
+    try:
+        # Set a timeout to prevent hanging
+        ai_response = await asyncio.wait_for(ai.fetch_and_query(user_query), timeout=30)
+        return {"response": ai_response}
+    except asyncio.TimeoutError:
+        return {"response": "The request timed out. Please try again later."}
+    except Exception as e:
+        return {"response": f"An error occurred: {str(e)}"}
 
 
 @app.post("/login/")
