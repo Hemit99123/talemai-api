@@ -16,6 +16,7 @@ async def query_model(context, query):
         "If you don't know the answer, just say that you don't know.\n"
         "Do not make up any information, and do not hallucinate.\n"
         "Do not repeat the question verbatim in your answer.\n"
+        "Do not mention that you are getting information from a text. Talk naturally."
     )
 
 
