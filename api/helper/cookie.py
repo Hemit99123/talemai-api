@@ -15,7 +15,10 @@ def create_cookie(sess_id: str):
         key="session-id",
         value=sess_id,
         httponly=True,
+        # Set SameSite to None for cross-site cookies in production
+        # Lax is used for same-site cookies in development (localhost is the same site)
         samesite="None" if is_prod else "Lax",
+        # Secure flag should be set to True in production for HTTPS
         secure=is_prod,
     )
     return response
