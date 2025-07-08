@@ -1,28 +1,18 @@
-from os import getenv
 import json
 import requests
-from dotenv import load_dotenv
-from langchain_astradb import AstraDBVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
-
-# Load environment variables
-load_dotenv()
-
-ASTRA_DB_API_ENDPOINT = getenv("ASTRA_DB_API_ENDPOINT")
-ASTRA_DB_APPLICATION_TOKEN = getenv("ASTRA_DB_APPLICATION_TOKEN")
-ASTRA_DB_NAMESPACE = getenv("ASTRA_DB_NAMESPACE")
-GROQ_API_KEY = getenv("GROQ_API_KEY")
-
 
 async def query_model(context, query):
     """Query the Groq LLM API with a given context and user query."""
     system_prompt = "Roleplay as a Q&A chatbot."
 
+    # Prompt engineering to ensure the model understands the task
     prompt = (
-        "Use the following context to answer the question. Think about the contents of the context "
-        "carefully to formulate a specific and accurate answer based on the query given.\n"
-        "If you don't know the answer, just say that you don't know.\n\n"
-        f"Context: {context}\nQuery: {query}"
+        f"Context: {context}\nQuery: {query}\n\n"
+        "Use the above context to answer the query. Think about the contents of the context deeply and meaningfully. Truly analyze the query and context surrounding it\n"
+        "If you don't know the answer, just say that you don't know.\n"
+        "Do not make up any information, and do not hallucinate.\n"
+        "Do not say 'Based on the provided context', or similar phrases.\n"  
+        "Do not repeat the question in your answer.\n"
     )
 
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -51,25 +41,3 @@ async def query_model(context, query):
         return "Failed to parse response from LLM API."
     except (KeyError, IndexError):
         return "Unexpected response format from LLM API."
-
-
-async def fetch_and_query(query):
-    """Fetch relevant context using vector search and send it along with the query to the LLM."""
-    embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
-
-    vectorstore = AstraDBVectorStore(
-        collection_name="main_v2",
-        embedding=embeddings,
-        api_endpoint=ASTRA_DB_API_ENDPOINT,
-        token=ASTRA_DB_APPLICATION_TOKEN,
-        namespace=ASTRA_DB_NAMESPACE,
-    )
-
-    print(f"Querying vectorstore for: {query}")
-
-    retriever = vectorstore.as_retriever()
-    retrieved_docs = retriever.invoke(query)
-    context = "\n\n".join([doc.page_content for doc in retrieved_docs])
-
-    return query_model(context, query)
