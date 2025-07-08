@@ -8,79 +8,26 @@ body:
         Thank you for reporting a PyLint issue. Please provide as much detail as possible so we can investigate and improve the linting rules or codebase.
 
   - type: textarea
-    id: pylint-description
+    id: github-action-workflow
     attributes:
-      label: PyLint Error Description
-      description: A brief summary of the PyLint error you encountered.
+      label: Link to GitHub Action Workflow
+      description: If this linting error was detected in a GitHub Action, please provide the link to the workflow run.
       placeholder: |
-        Example: PyLint raises `unused-import` on an import that is required for type hints.
+        www.github.com/your-repo/actions/runs/1234567890
     validations:
       required: true
 
   - type: textarea
-    id: code-snippet
+    id: brief-description
     attributes:
-      label: Code Snippet or File Path
-      description: Provide the relevant code snippet or file where the linting error occurs.
+      label: Breif Description
+      description: How would you describe the linting issue?
       placeholder: |
-        ```python
-        import typing  # This is flagged as unused
-        def greet(name: str) -> str:
-            return f"Hello, {name}"
-        ```
-        File: `app/utils/helpers.py`
+        The code has an unused import statement.
+        The variable name is too short.
     validations:
       required: true
 
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps to Reproduce
-      description: How can we reproduce this PyLint error?
-      placeholder: |
-        1. Navigate to project root
-        2. Run `pylint app/utils/helpers.py`
-        3. Observe the lint warning/error
-    validations:
-      required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: Expected Behavior
-      description: What did you expect PyLint to do?
-      placeholder: |
-        I expected PyLint not to flag the `typing` import as unused since it's used in type hints.
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual PyLint Output
-      description: What error or warning did PyLint actually show?
-      placeholder: |
-        `app/utils/helpers.py:1:0: W0611: Unused import typing (unused-import)`
-    validations:
-      required: true
-
-  - type: input
-    id: pylint-version
-    attributes:
-      label: PyLint Version
-      description: What version of PyLint are you using?
-      placeholder: e.g., pylint 3.1.0
-    validations:
-      required: true
-
-  - type: textarea
-    id: config
-    attributes:
-      label: Relevant `.pylintrc` Config
-      description: Include any relevant portions of your PyLint config (if customized)
-      placeholder: |
-        [MESSAGES CONTROL]
-        disable=missing-docstring, invalid-name
 
   - type: markdown
     attributes:
