@@ -73,13 +73,9 @@ ASTRA_DB_APPLICATION_TOKEN = getenv("ASTRA_DB_APPLICATION_TOKEN")
 ASTRA_DB_NAMESPACE = getenv("ASTRA_DB_NAMESPACE")
 COHERE_API_KEY = getenv("COHERE_API_KEY")
 
+
+# CPU execution 
 executor = ThreadPoolExecutor(max_workers=2)
-
-class QueryModal(BaseModel):
-    query: str
-
-class TokenModal(BaseModel):
-    token: str
 
 app.add_middleware(
     CORSMiddleware,
