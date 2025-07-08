@@ -19,6 +19,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 from bson.json_util import dumps
 import json
+from bson import ObjectId
 
 def extract_document_content(doc):
     """Safely extract content from various document formats."""
@@ -81,7 +82,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://ai.talem.org", "http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
+    allow_methods=["GET", "POST", "HEAD", "OPTIONS", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -180,9 +181,18 @@ async def handle_save_chat_message(request: Request):
 
 @app.delete("/chat-history/")
 @precheck.decorator
-async def handle_delete_chat_history(request: Request):
+async def handle_delete_single_chat_history(request: Request):
+    data = await request.json()
+    chat_id = data.get("chat_id")
+
     email = await get_session_email(request)
     client = get_mongo_client()
     collection = client['chat_database']['chat_history']
-    result = collection.delete_many({"email": email})
-    return JSONResponse(content={"response": f"Deleted {result.deleted_count} chat messages."})
+    try:
+        result = collection.delete_one({"_id": ObjectId(chat_id), "email": email})
+        if result.deleted_count == 1:
+            return JSONResponse(content={"response": f"Deleted chat message with id {chat_id}."})
+        else:
+            return JSONResponse(content={"error": "Chat message not found or not authorized."}, status_code=404)
+    except Exception as e:
+        return JSONResponse(content={"error": f"Invalid chat_id: {str(e)}"}, status_code=400)
