@@ -2,8 +2,8 @@ import os
 import requests
 import redis
 from dotenv import load_dotenv
-from helper import sess_id
 from fastapi import Request
+from helper.session_id import generate_random_id
 
 # Load environment variables
 load_dotenv()
@@ -30,15 +30,15 @@ def create_session(token: str):
 
         if (token_status):
 
-            generated_sess_id = sess_id.generate_random_id()
+            session_id = generate_random_id()
 
             # This is the contents of the session
-            redis_client.hset(generated_sess_id, mapping={
+            redis_client.hset(session_id, mapping={
                 "name": name,
                 "email": email
             })
 
-            return generated_sess_id
+            return session_id
         else:
             return False
     except Exception as error:

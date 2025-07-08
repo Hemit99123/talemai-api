@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from langchain_astradb import AstraDBVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel
-from helper import auth
-from helper import cookie 
+from helper.auth import create_session, destroy_session
+from helper.cookie import create_cookie, destroy_cookie 
 from decorators import precheck
 from helper.ai import query_model
 from dotenv import load_dotenv
@@ -79,10 +79,10 @@ async def handle_login_request(request: Request):
     data = await request.json()
     token = data.get("token")
 
-    session_id = auth.create_session(token)
+    session_id = create_session(token)
 
     if (session_id):
-        return cookie.create_cookie(session_id)
+        return create_cookie(session_id)
     else:
         return {"response": "Error in logging process. Try again."}
 
@@ -90,9 +90,9 @@ async def handle_login_request(request: Request):
 async def handle_logout_request():
     """Handle POST request, retrieve session for email id, destory session and cookies"""
 
-    destruction_session = auth.destroy_session()
+    destruction_session = destroy_session()
 
     if (destruction_session):
-        return cookie.destroy_cookie()
+        return destroy_cookie()
     else:
         return { "response": "Error in logging out process. Try again." }
