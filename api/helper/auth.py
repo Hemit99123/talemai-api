@@ -8,10 +8,9 @@ from helper.session_id import generate_random_id
 # Load environment variables
 load_dotenv()
 
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_URI = os.getenv("REDIS_URI")
 
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+redis_client = redis.from_url(REDIS_URI, decode_responses=True)
 
 def create_session(token: str):
     try:
@@ -58,7 +57,7 @@ def destroy_session(request: Request):
         print(error)
         return False
 
-async def get_session(request: Request):
+async def get_session_email(request: Request):
     # get cookie with session id
     sess_id = request.cookies.get("session-id")
 
@@ -66,13 +65,9 @@ async def get_session(request: Request):
         return False
 
     # find session attributes using session id (hashmap allows individual key-value pairs access)
-    name = redis_client.hget(sess_id, "name")
     email = redis_client.hget(sess_id, "email")
 
-    if not name or not email:
+    if not email:
         return False
     else:
-        return { 
-            "name": name,
-            "email": email, 
-        }
+        return email

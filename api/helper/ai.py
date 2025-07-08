@@ -1,46 +1,31 @@
-import json
-import requests
+import httpx
 from os import getenv 
+import cohere
 
-GROQ_API_KEY = getenv("GROQ_API_KEY")  
+GROQ_API_KEY = getenv("GROQ_API_KEY")
+COHERE_API_KEY = getenv("COHERE_API_KEY")
 
 async def query_model(context, query):
-    """Query the Groq LLM API with a given context and user query."""
-    system_prompt = "Roleplay as a Q&A chatbot."
+    """Query the Cohere LLM API with a given context and user query."""
 
-    # Prompt engineering to ensure the model understands the task
-    prompt = (
-        f"Context: {context}\nQuery: {query}\n\n"
-        "Use the above context to answer the query. Think about the contents of the context deeply and meaningfully. Truly analyze the query and context surrounding it\n"
+    co = cohere.ClientV2(COHERE_API_KEY)
+
+    system_prompt = (
+        "You are a RAG chatbot. Use the documents given to properly answer the query.\n"
+        "If you do not understand the question, ask for clarity with insight-seeking questions.\n"
         "If you don't know the answer, just say that you don't know.\n"
         "Do not make up any information, and do not hallucinate.\n"
-        "Do not say 'Based on the provided context', or similar phrases.\n"  
-        "Do not repeat the question in your answer.\n"
+        "Do not repeat the question verbatim in your answer.\n"
     )
 
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {GROQ_API_KEY}"
-    }
-    data = {
-        "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ]
-    }
 
-    try:
-        response = requests.post(url, headers=headers, json=data, timeout=10)
-        response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
-    except requests.exceptions.Timeout:
-        return "The request timed out. Please try again later."
-    except requests.exceptions.RequestException as e:
-        return f"Request error occurred: {str(e)}"
-    except json.JSONDecodeError:
-        return "Failed to parse response from LLM API."
-    except (KeyError, IndexError):
-        return "Unexpected response format from LLM API."
+    response = co.chat(
+        model="command-r-plus-08-2024",
+        messages=[
+            {"role": "user", "content": query},
+            {"role": "system", "content": system_prompt}
+        ],
+        documents=[context]
+    )
+
+    return response.message.content[0].text

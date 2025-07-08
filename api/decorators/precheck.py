@@ -1,12 +1,12 @@
-from helper import auth
+from helper.auth import get_session_email
 from fastapi import Request
 import functools
 
 def decorator(func):
     @functools.wraps(func)
     async def wrapper(request: Request):
-        session_valid = await auth.get_session(request)
-        if session_valid:
+        email = await get_session_email(request)
+        if email:
             return await func(request)
         return {"response": "Unauthorized access. Please login."}
     return wrapper
