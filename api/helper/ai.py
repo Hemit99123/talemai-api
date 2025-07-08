@@ -1,5 +1,8 @@
 import json
 import requests
+from os import getenv 
+
+GROQ_API_KEY = getenv("GROQ_API_KEY")  
 
 async def query_model(context, query):
     """Query the Groq LLM API with a given context and user query."""
