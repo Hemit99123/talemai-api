@@ -37,6 +37,9 @@ def create_session(token: str):
                 "name": name,
                 "email": email
             })
+            
+            expiry_time = 60 * 60 * 24 * 7 # 7 days in seconds
+            redis_client.expire(session_id, expiry_time)  
 
             return session_id
         else:
