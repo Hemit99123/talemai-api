@@ -25,5 +25,6 @@ jobs:
 
       - name: Run pylint
         run: |
+          cd api
           source venv/bin/activate
           pylint $(git ls-files '*.py')
