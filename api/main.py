@@ -89,7 +89,6 @@ async def handle_login_request(request: Request):
 @app.post("/logout/")
 async def handle_logout_request(request: Request):
     """Handle POST request, retrieve session for email id, destory session and cookies"""
-
     destruction_session = destroy_session(request)
 
     if (destruction_session):
