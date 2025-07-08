@@ -32,7 +32,7 @@ Python is the programming language of choice for this project
 #### LangChain 👨‍🔬
 Langchain abstracts a lot of the RAG logic, allowing for faster development times. 
 <br>
-#### AstraDB 💽
+#### AstraDB (DataStax) 💽
 AstraDB allows for the storage of the vector embeddings (context) which are retrieved by the different materials we want our LLM to be well-versed in.
 <br>
 #### Groq REST API
