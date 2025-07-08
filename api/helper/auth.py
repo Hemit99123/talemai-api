@@ -45,9 +45,11 @@ def create_session(token: str):
         print(error)
         return False
 
-def destroy_session(email):
+def destroy_session(request: Request):
+
+    sess_id = request.cookies.get("session-id")
     try:
-        redis_client.delete(email)
+        redis_client.delete(sess_id)
         return True
     except Exception as error:
         print(error)

@@ -87,10 +87,10 @@ async def handle_login_request(request: Request):
         return {"response": "Error in logging process. Try again."}
 
 @app.post("/logout/")
-async def handle_logout_request():
+async def handle_logout_request(request: Request):
     """Handle POST request, retrieve session for email id, destory session and cookies"""
 
-    destruction_session = destroy_session()
+    destruction_session = destroy_session(request)
 
     if (destruction_session):
         return destroy_cookie()
