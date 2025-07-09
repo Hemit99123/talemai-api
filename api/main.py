@@ -42,33 +42,33 @@ def extract_document_content(doc):
         if isinstance(doc, dict):
             return doc.get("page_content") or doc.get("content") or ""
         return str(doc)
-    except Exception as e:
+    except AttributeError as e:
         print(f"Error extracting content from doc: {e}")
         return ""
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app_instance: FastAPI):
     """Initialize embeddings and vectorstore at server startup."""
     print("=== SERVER STARTUP ===")
     try:
         print("🔄 Initializing Cohere embeddings...")
-        app.state.embeddings = CohereEmbeddings(
+        app_instance.state.embeddings = CohereEmbeddings(
             model="embed-english-v3.0", cohere_api_key=COHERE_API_KEY
         )
         print("✅ Cohere embeddings initialized!")
 
         print("🔄 Initializing vectorstore...")
-        app.state.vectorstore = AstraDBVectorStore(
+        app_instance.state.vectorstore = AstraDBVectorStore(
             collection_name="main_v6",
-            embedding=app.state.embeddings,
+            embedding=app_instance.state.embeddings,
             api_endpoint=ASTRA_DB_API_ENDPOINT,
             token=ASTRA_DB_APPLICATION_TOKEN,
             namespace=ASTRA_DB_NAMESPACE,
         )
         print("✅ Vectorstore initialized!")
         print("=== INITIALIZATION COMPLETE ===")
-    except Exception as e:
+    except (ValueError, RuntimeError) as e:
         print(f"❌ Startup failed: {e}")
         raise
     yield
@@ -88,7 +88,7 @@ app.add_middleware(
 
 @app.get("/")
 @precheck.decorator
-async def handle_index_request(request: Request):
+async def handle_index_request(_request: Request):
     """Basic health check response."""
     return {"response": "Talem AI server"}
 
@@ -99,11 +99,12 @@ async def handle_chat_request(request: Request):
     """Process user query and return response from the language model."""
     try:
         data = await request.json()
-        query = data.get("query")
-        if not query:
-            return {"error": "Query missing"}
     except json.JSONDecodeError:
         return {"error": "Invalid JSON"}
+
+    query = data.get("query")
+    if not query:
+        return {"error": "Query missing"}
 
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
         return {"error": "Server still initializing, please try again shortly"}
@@ -112,24 +113,24 @@ async def handle_chat_request(request: Request):
         retriever = app.state.vectorstore.as_retriever()
         loop = asyncio.get_running_loop()
         retrieved_docs = await loop.run_in_executor(executor, retriever.invoke, query)
-
-        context_parts = []
-        for doc in retrieved_docs:
-            content = extract_document_content(doc).strip()
-            if content:
-                context_parts.append(content)
-
-        context = "\n\n".join(context_parts)
-        if not context:
-            return {"error": "No relevant content found"}
-
-    except Exception as exc:
+    except RuntimeError as exc:
         print(f"Retrieval error: {exc}")
         return {"error": f"Retrieval failed: {exc}"}
 
+    context_parts = []
+    for doc in retrieved_docs:
+        content = extract_document_content(doc).strip()
+        if content:
+            context_parts.append(content)
+
+    if not context_parts:
+        return {"error": "No relevant content found"}
+
+    context = "\n\n".join(context_parts)
+
     try:
         response = await query_model(context, query)
-    except Exception as exc:
+    except RuntimeError as exc:
         print(f"Model inference error: {exc}")
         return {"error": f"Model inference failed: {exc}"}
 
@@ -139,8 +140,15 @@ async def handle_chat_request(request: Request):
 @app.post("/login/")
 async def handle_login_request(request: Request):
     """Validate token, create session and set cookie."""
-    data = await request.json()
+    try:
+        data = await request.json()
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON"}
+
     token = data.get("token")
+    if not token:
+        return {"error": "Token missing"}
+
     session_id = create_session(token)
     if session_id:
         return create_cookie(session_id)
@@ -150,7 +158,8 @@ async def handle_login_request(request: Request):
 @app.post("/logout/")
 async def handle_logout_request(request: Request):
     """Destroy session cookie on logout."""
-    if destroy_session(request):
+    success = await destroy_session(request)
+    if success:
         return destroy_cookie()
     return {"response": "Error in logging out process. Try again."}
 
@@ -192,10 +201,12 @@ async def handle_delete_single_chat_history(request: Request):
     collection = client["chat_database"]["chat_history"]
     try:
         result = collection.delete_one({"_id": ObjectId(chat_id), "email": email})
-        if result.deleted_count == 1:
-            return JSONResponse(content={"response": f"Deleted chat message with id {chat_id}."})
-        return JSONResponse(
-            content={"error": "Chat message not found or not authorized."}, status_code=404
-        )
     except Exception as exc:
         return JSONResponse(content={"error": f"Invalid chat_id: {exc}"}, status_code=400)
+
+    if result.deleted_count == 1:
+        return JSONResponse(content={"response": f"Deleted chat message with id {chat_id}."})
+
+    return JSONResponse(
+        content={"error": "Chat message not found or not authorized."}, status_code=404
+    )
