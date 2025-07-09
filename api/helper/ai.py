@@ -1,8 +1,8 @@
-import httpx
-from os import getenv 
-import cohere
+"""Helper module for querying the Cohere LLM API."""
 
-GROQ_API_KEY = getenv("GROQ_API_KEY")
+from os import getenv  
+import cohere  
+
 COHERE_API_KEY = getenv("COHERE_API_KEY")
 
 async def query_model(context, query):
@@ -18,7 +18,6 @@ async def query_model(context, query):
         "Do not repeat the question verbatim in your answer.\n"
         "Do not mention that you are getting information from a text. Talk naturally."
     )
-
 
     response = co.chat(
         model="command-r-plus-08-2024",
