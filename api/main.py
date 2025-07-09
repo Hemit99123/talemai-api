@@ -60,9 +60,9 @@ async def _validate_chat_request(request: Request):
 
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
         return None, {"error": "Server still initializing, please try again shortly"}
-    
+
     return query, None
-    
+
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):
     """Initialize embeddings and vectorstore at server startup."""
@@ -107,7 +107,7 @@ app.add_middleware(
 async def handle_index_request(_request: Request):
     """Basic health check response."""
     return {"response": "Talem AI server"}
-    
+
 @app.post("/chat/")
 @precheck.decorator
 async def handle_chat_request(request: Request):
@@ -141,7 +141,7 @@ async def handle_chat_request(request: Request):
         return {"error": f"Model inference failed: {exc}"}
 
     return {"response": response}
-    
+
 @app.post("/login/")
 async def handle_login_request(request: Request):
     """Validate token, create session and set cookie."""
