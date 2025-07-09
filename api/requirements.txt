@@ -94,4 +94,3 @@ websockets
 yarl
 zstandard
 redis
-cohere
