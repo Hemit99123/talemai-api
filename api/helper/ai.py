@@ -1,7 +1,7 @@
 """Helper module for querying the Cohere LLM API."""
 
 from os import getenv
-import cohere  
+import cohere
 
 COHERE_API_KEY = getenv("COHERE_API_KEY")
 
