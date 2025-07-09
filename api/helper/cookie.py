@@ -1,28 +1,27 @@
-from fastapi.responses import JSONResponse
-from os import getenv
+"""Cookie helper module to create and destroy session cookies for authentication."""
+
+from os import getenv  # Standard import first
+from fastapi.responses import JSONResponse  # Third-party import
 
 ENV = getenv("ENV", "development")
-
-content = { "response": "Success." }
+content = {"response": "Success."}
 
 def create_cookie(sess_id: str):
-
+    """Create a session cookie with appropriate settings based on environment."""
     response = JSONResponse(content=content)
-    is_prod = getenv("ENV", "development") == "production"
+    is_prod = ENV == "production"
 
     response.set_cookie(
         key="session-id",
         value=sess_id,
         httponly=True,
-        # Set SameSite to None for cross-site cookies in production
-        # Lax is used for same-site cookies in development (localhost is the same site)
         samesite="None" if is_prod else "Lax",
-        # Secure flag should be set to True in production for HTTPS
         secure=is_prod,
     )
     return response
 
 def destroy_cookie():
+    """Destroy the session cookie by removing it from the response."""
     response = JSONResponse(content=content)
     response.delete_cookie(key="session-id")
     return response
