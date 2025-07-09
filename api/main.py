@@ -49,20 +49,20 @@ def extract_document_content(doc):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(fastapi_app: FastAPI):
     """Initialize embeddings and vectorstore at server startup."""
     print("=== SERVER STARTUP ===")
     try:
         print("🔄 Initializing Cohere embeddings...")
-        app.state.embeddings = CohereEmbeddings(
+        fastapi_app.state.embeddings = CohereEmbeddings(
             model="embed-english-v3.0", cohere_api_key=COHERE_API_KEY
         )
         print("✅ Cohere embeddings initialized!")
 
         print("🔄 Initializing vectorstore...")
-        app.state.vectorstore = AstraDBVectorStore(
+        fastapi_app.state.vectorstore = AstraDBVectorStore(
             collection_name="main_v6",
-            embedding=app.state.embeddings,
+            embedding=fastapi_app.state.embeddings,
             api_endpoint=ASTRA_DB_API_ENDPOINT,
             token=ASTRA_DB_APPLICATION_TOKEN,
             namespace=ASTRA_DB_NAMESPACE,
@@ -98,9 +98,7 @@ async def handle_index_request(_request: Request):
 @precheck.decorator
 async def handle_chat_request(request: Request):
     """Process user query and return response from the language model."""
-    response_data = None
-    error_response = None
-
+    # Validate JSON and extract query
     try:
         data = await request.json()
         query = data.get("query")
@@ -109,9 +107,11 @@ async def handle_chat_request(request: Request):
     except json.JSONDecodeError:
         return {"error": "Invalid JSON"}
 
+    # Check if server is initialized
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
         return {"error": "Server still initializing, please try again shortly"}
 
+    # Retrieve relevant documents
     try:
         retriever = app.state.vectorstore.as_retriever()
         loop = asyncio.get_running_loop()
@@ -131,14 +131,13 @@ async def handle_chat_request(request: Request):
         print(f"Retrieval error: {exc}")
         return {"error": f"Retrieval failed: {exc}"}
 
+    # Query the model and return response
     try:
         response = await query_model(context, query)
-        response_data = {"response": response}
+        return {"response": response}
     except RuntimeError as exc:
         print(f"Model inference error: {exc}")
         return {"error": f"Model inference failed: {exc}"}
-
-    return response_data
 
 
 @app.post("/login/")
