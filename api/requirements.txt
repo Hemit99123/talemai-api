@@ -35,7 +35,7 @@ langchain
 langchain-astradb
 langchain-community
 langchain-core
-langchain-huggingface
+langchain-cohere
 langchain-text-splitters
 langsmith
 markdown-it-py
