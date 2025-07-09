@@ -47,7 +47,22 @@ def extract_document_content(doc):
         print(f"Error extracting content from doc: {e}")
         return ""
 
+async def _validate_chat_request(request: Request):
+    """Validate chat request and return query or error."""
+    try:
+        data = await request.json()
+    except json.JSONDecodeError:
+        return None, {"error": "Invalid JSON"}
 
+    query = data.get("query")
+    if not query:
+        return None, {"error": "Query missing"}
+
+    if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
+        return None, {"error": "Server still initializing, please try again shortly"}
+    
+    return query, None
+    
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):
     """Initialize embeddings and vectorstore at server startup."""
@@ -92,23 +107,14 @@ app.add_middleware(
 async def handle_index_request(_request: Request):
     """Basic health check response."""
     return {"response": "Talem AI server"}
-
-
+    
 @app.post("/chat/")
 @precheck.decorator
 async def handle_chat_request(request: Request):
     """Process user query and return response from the language model."""
-    try:
-        data = await request.json()
-    except json.JSONDecodeError:
-        return {"error": "Invalid JSON"}
-
-    query = data.get("query")
-    if not query:
-        return {"error": "Query missing"}
-
-    if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
-        return {"error": "Server still initializing, please try again shortly"}
+    query, error = await _validate_chat_request(request)
+    if error:
+        return error
 
     try:
         retriever = app.state.vectorstore.as_retriever()
@@ -135,8 +141,7 @@ async def handle_chat_request(request: Request):
         return {"error": f"Model inference failed: {exc}"}
 
     return {"response": response}
-
-
+    
 @app.post("/login/")
 async def handle_login_request(request: Request):
     """Validate token, create session and set cookie."""
