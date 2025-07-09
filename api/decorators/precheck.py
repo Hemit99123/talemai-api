@@ -1,8 +1,9 @@
 """Precheck decorator to ensure request has an authenticated user."""
 
-import functools 
-from fastapi import Request  
-from helper.auth import get_session_email  
+import functools
+from fastapi import Request
+from helper.auth import get_session_email
+
 
 def decorator(func):
     """Decorator that checks if the request has a valid session email."""
