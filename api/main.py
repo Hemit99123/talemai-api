@@ -48,20 +48,20 @@ def extract_document_content(doc):
 
 
 @asynccontextmanager
-async def lifespan(app_instance: FastAPI):
+async def lifespan(app: FastAPI):
     """Initialize embeddings and vectorstore at server startup."""
     print("=== SERVER STARTUP ===")
     try:
         print("🔄 Initializing Cohere embeddings...")
-        app_instance.state.embeddings = CohereEmbeddings(
+        app.state.embeddings = CohereEmbeddings(
             model="embed-english-v3.0", cohere_api_key=COHERE_API_KEY
         )
         print("✅ Cohere embeddings initialized!")
 
         print("🔄 Initializing vectorstore...")
-        app_instance.state.vectorstore = AstraDBVectorStore(
+        app.state.vectorstore = AstraDBVectorStore(
             collection_name="main_v6",
-            embedding=app_instance.state.embeddings,
+            embedding=app.state.embeddings,
             api_endpoint=ASTRA_DB_API_ENDPOINT,
             token=ASTRA_DB_APPLICATION_TOKEN,
             namespace=ASTRA_DB_NAMESPACE,
@@ -97,44 +97,52 @@ async def handle_index_request(_request: Request):
 @precheck.decorator
 async def handle_chat_request(request: Request):
     """Process user query and return response from the language model."""
+    response_data = None
+    error_response = None
+
     try:
         data = await request.json()
+        query = data.get("query")
+        if not query:
+            error_response = {"error": "Query missing"}
+            return error_response
     except json.JSONDecodeError:
-        return {"error": "Invalid JSON"}
-
-    query = data.get("query")
-    if not query:
-        return {"error": "Query missing"}
+        error_response = {"error": "Invalid JSON"}
+        return error_response
 
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
-        return {"error": "Server still initializing, please try again shortly"}
+        error_response = {"error": "Server still initializing, please try again shortly"}
+        return error_response
 
     try:
         retriever = app.state.vectorstore.as_retriever()
         loop = asyncio.get_running_loop()
         retrieved_docs = await loop.run_in_executor(executor, retriever.invoke, query)
+
+        context_parts = [
+            extract_document_content(doc).strip()
+            for doc in retrieved_docs
+            if extract_document_content(doc).strip()
+        ]
+
+        if not context_parts:
+            error_response = {"error": "No relevant content found"}
+            return error_response
+
+        context = "\n\n".join(context_parts)
     except RuntimeError as exc:
         print(f"Retrieval error: {exc}")
-        return {"error": f"Retrieval failed: {exc}"}
-
-    context_parts = []
-    for doc in retrieved_docs:
-        content = extract_document_content(doc).strip()
-        if content:
-            context_parts.append(content)
-
-    if not context_parts:
-        return {"error": "No relevant content found"}
-
-    context = "\n\n".join(context_parts)
+        error_response = {"error": f"Retrieval failed: {exc}"}
+        return error_response
 
     try:
         response = await query_model(context, query)
+        response_data = {"response": response}
     except RuntimeError as exc:
         print(f"Model inference error: {exc}")
-        return {"error": f"Model inference failed: {exc}"}
+        error_response = {"error": f"Model inference failed: {exc}"}
 
-    return {"response": response}
+    return response_data if response_data else error_response
 
 
 @app.post("/login/")
@@ -199,6 +207,7 @@ async def handle_delete_single_chat_history(request: Request):
     email = await get_session_email(request)
     client = get_mongo_client()
     collection = client["chat_database"]["chat_history"]
+
     try:
         result = collection.delete_one({"_id": ObjectId(chat_id), "email": email})
     except Exception as exc:
