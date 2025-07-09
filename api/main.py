@@ -98,46 +98,43 @@ async def handle_index_request(_request: Request):
 @precheck.decorator
 async def handle_chat_request(request: Request):
     """Process user query and return response from the language model."""
-    # Validate JSON and extract query
     try:
         data = await request.json()
-        query = data.get("query")
-        if not query:
-            return {"error": "Query missing"}
     except json.JSONDecodeError:
         return {"error": "Invalid JSON"}
 
-    # Check if server is initialized
+    query = data.get("query")
+    if not query:
+        return {"error": "Query missing"}
+
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
         return {"error": "Server still initializing, please try again shortly"}
 
-    # Retrieve relevant documents
     try:
         retriever = app.state.vectorstore.as_retriever()
         loop = asyncio.get_running_loop()
         retrieved_docs = await loop.run_in_executor(executor, retriever.invoke, query)
-
-        context_parts = [
-            extract_document_content(doc).strip()
-            for doc in retrieved_docs
-            if extract_document_content(doc).strip()
-        ]
-
-        if not context_parts:
-            return {"error": "No relevant content found"}
-
-        context = "\n\n".join(context_parts)
     except RuntimeError as exc:
         print(f"Retrieval error: {exc}")
         return {"error": f"Retrieval failed: {exc}"}
 
-    # Query the model and return response
+    context_parts = [
+        extract_document_content(doc).strip()
+        for doc in retrieved_docs
+        if extract_document_content(doc).strip()
+    ]
+    if not context_parts:
+        return {"error": "No relevant content found"}
+
+    context = "\n\n".join(context_parts)
+
     try:
         response = await query_model(context, query)
-        return {"response": response}
     except RuntimeError as exc:
         print(f"Model inference error: {exc}")
         return {"error": f"Model inference failed: {exc}"}
+
+    return {"response": response}
 
 
 @app.post("/login/")
