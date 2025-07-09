@@ -112,18 +112,18 @@ async def handle_chat_request(request: Request):
 
     try:
         retriever = app.state.vectorstore.as_retriever()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         retrieved_docs = await loop.run_in_executor(
             executor,
             retriever.invoke,
             query
         )
 
-        context_parts = []
-        for doc in retrieved_docs:
-            content = extract_document_content(doc)
-            if content and content.strip():
-                context_parts.append(content.strip())
+        context_parts = [
+            extract_document_content(doc).strip()
+            for doc in retrieved_docs
+            if extract_document_content(doc) and extract_document_content(doc).strip()
+        ]
 
         context = "\n\n".join(context_parts)
 
