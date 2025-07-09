@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 
 from bson import ObjectId
+from bson.errors import InvalidId
 from bson.json_util import dumps
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -104,15 +105,12 @@ async def handle_chat_request(request: Request):
         data = await request.json()
         query = data.get("query")
         if not query:
-            error_response = {"error": "Query missing"}
-            return error_response
+            return {"error": "Query missing"}
     except json.JSONDecodeError:
-        error_response = {"error": "Invalid JSON"}
-        return error_response
+        return {"error": "Invalid JSON"}
 
     if not (hasattr(app.state, "embeddings") and hasattr(app.state, "vectorstore")):
-        error_response = {"error": "Server still initializing, please try again shortly"}
-        return error_response
+        return {"error": "Server still initializing, please try again shortly"}
 
     try:
         retriever = app.state.vectorstore.as_retriever()
@@ -126,23 +124,21 @@ async def handle_chat_request(request: Request):
         ]
 
         if not context_parts:
-            error_response = {"error": "No relevant content found"}
-            return error_response
+            return {"error": "No relevant content found"}
 
         context = "\n\n".join(context_parts)
     except RuntimeError as exc:
         print(f"Retrieval error: {exc}")
-        error_response = {"error": f"Retrieval failed: {exc}"}
-        return error_response
+        return {"error": f"Retrieval failed: {exc}"}
 
     try:
         response = await query_model(context, query)
         response_data = {"response": response}
     except RuntimeError as exc:
         print(f"Model inference error: {exc}")
-        error_response = {"error": f"Model inference failed: {exc}"}
+        return {"error": f"Model inference failed: {exc}"}
 
-    return response_data if response_data else error_response
+    return response_data
 
 
 @app.post("/login/")
@@ -209,9 +205,11 @@ async def handle_delete_single_chat_history(request: Request):
     collection = client["chat_database"]["chat_history"]
 
     try:
-        result = collection.delete_one({"_id": ObjectId(chat_id), "email": email})
-    except Exception as exc:
+        oid = ObjectId(chat_id)
+    except InvalidId as exc:
         return JSONResponse(content={"error": f"Invalid chat_id: {exc}"}, status_code=400)
+
+    result = collection.delete_one({"_id": oid, "email": email})
 
     if result.deleted_count == 1:
         return JSONResponse(content={"response": f"Deleted chat message with id {chat_id}."})
