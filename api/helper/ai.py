@@ -1,9 +1,10 @@
 """Helper module for querying the Cohere LLM API."""
 
-from os import getenv  
+from os import getenv
 import cohere  
 
 COHERE_API_KEY = getenv("COHERE_API_KEY")
+
 
 async def query_model(context, query):
     """Query the Cohere LLM API with a given context and user query."""
