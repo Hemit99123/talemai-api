@@ -1,25 +1,36 @@
-"""Clean FastAPI server with Cohere embeddings - reliable alternative."""
+"""Main FastAPI server entrypoint for Talem AI."""
 
 import asyncio
+import json
+from os import getenv
+from datetime import datetime
+from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
+
+from bson import ObjectId
+from bson.json_util import dumps
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from langchain_astradb import AstraDBVectorStore
 from langchain_cohere import CohereEmbeddings
-from pydantic import BaseModel
-from helper.auth import create_session, destroy_session, get_session_email
-from helper.cookie import create_cookie, destroy_cookie 
+
 from decorators import precheck
+from helper.auth import create_session, destroy_session, get_session_email
+from helper.cookie import create_cookie, destroy_cookie
 from helper.ai import query_model
-from dotenv import load_dotenv
-from os import getenv
 from helper.mongodb import get_mongo_client
-from datetime import datetime
-from contextlib import asynccontextmanager
-from bson.json_util import dumps
-import json
-from bson import ObjectId
+
+load_dotenv()
+
+ASTRA_DB_API_ENDPOINT = getenv("ASTRA_DB_API_ENDPOINT")
+ASTRA_DB_APPLICATION_TOKEN = getenv("ASTRA_DB_APPLICATION_TOKEN")
+ASTRA_DB_NAMESPACE = getenv("ASTRA_DB_NAMESPACE")
+COHERE_API_KEY = getenv("COHERE_API_KEY")
+
+executor = ThreadPoolExecutor(max_workers=2)
+
 
 def extract_document_content(doc):
     """Safely extract content from various document formats."""
@@ -35,9 +46,10 @@ def extract_document_content(doc):
         print(f"Error extracting content from doc: {e}")
         return ""
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Modern FastAPI lifespan management - clean and fast."""
+    """Modern FastAPI lifespan management - initializes embeddings and vectorstore."""
     print("=== SERVER STARTUP ===")
     try:
         print("🔄 Initializing Cohere embeddings...")
@@ -64,19 +76,8 @@ async def lifespan(app: FastAPI):
     yield
     print("Shutting down...")
 
+
 app = FastAPI(lifespan=lifespan)
-
-# Load .env config
-load_dotenv()
-
-ASTRA_DB_API_ENDPOINT = getenv("ASTRA_DB_API_ENDPOINT")
-ASTRA_DB_APPLICATION_TOKEN = getenv("ASTRA_DB_APPLICATION_TOKEN")
-ASTRA_DB_NAMESPACE = getenv("ASTRA_DB_NAMESPACE")
-COHERE_API_KEY = getenv("COHERE_API_KEY")
-
-
-# CPU execution 
-executor = ThreadPoolExecutor(max_workers=2)
 
 app.add_middleware(
     CORSMiddleware,
@@ -86,14 +87,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 @precheck.decorator
 async def handle_index_request(request: Request):
+    """Return a basic health check response."""
     return {"response": "Talem AI server"}
+
 
 @app.post("/chat/")
 @precheck.decorator
 async def handle_chat_request(request: Request):
+    """Process user query and return response from the language model."""
     try:
         data = await request.json()
         query = data.get("query")
@@ -137,8 +142,10 @@ async def handle_chat_request(request: Request):
 
     return {"response": response}
 
+
 @app.post("/login/")
 async def handle_login_request(request: Request):
+    """Handle user login by validating token and setting session cookie."""
     data = await request.json()
     token = data.get("token")
     session_id = create_session(token)
@@ -146,24 +153,30 @@ async def handle_login_request(request: Request):
         return create_cookie(session_id)
     return {"response": "Error in logging process. Try again."}
 
+
 @app.post("/logout/")
 async def handle_logout_request(request: Request):
+    """Handle user logout and destroy session cookie."""
     if destroy_session(request):
         return destroy_cookie()
     return {"response": "Error in logging out process. Try again."}
 
+
 @app.get("/chat-history/")
 @precheck.decorator
 async def handle_chat_history_request(request: Request):
+    """Fetch saved chat history for the authenticated user."""
     email = await get_session_email(request)
     client = get_mongo_client()
     collection = client['chat_database']['chat_history']
     chat_history = list(collection.find({"email": email}))
     return JSONResponse(content=json.loads(dumps({"response": chat_history})))
 
+
 @app.post("/chat-history/")
 @precheck.decorator
 async def handle_save_chat_message(request: Request):
+    """Save a chat exchange to the database."""
     data = await request.json()
     messages = data.get("messages")
     email = await get_session_email(request)
@@ -179,9 +192,11 @@ async def handle_save_chat_message(request: Request):
     saved_doc = collection.find_one({"_id": result.inserted_id})
     return JSONResponse(content=json.loads(dumps({"response": saved_doc})))
 
+
 @app.delete("/chat-history/")
 @precheck.decorator
 async def handle_delete_single_chat_history(request: Request):
+    """Delete a single chat history entry by ID."""
     data = await request.json()
     chat_id = data.get("chat_id")
 
@@ -192,7 +207,6 @@ async def handle_delete_single_chat_history(request: Request):
         result = collection.delete_one({"_id": ObjectId(chat_id), "email": email})
         if result.deleted_count == 1:
             return JSONResponse(content={"response": f"Deleted chat message with id {chat_id}."})
-        else:
-            return JSONResponse(content={"error": "Chat message not found or not authorized."}, status_code=404)
+        return JSONResponse(content={"error": "Chat message not found or not authorized."}, status_code=404)
     except Exception as e:
         return JSONResponse(content={"error": f"Invalid chat_id: {str(e)}"}, status_code=400)
